@@ -19,9 +19,6 @@ def chat_complition(prompt: str) -> dict:
     '''
     try:
         # Create a chat completion with the OpenAI API
-        # The model is set to 'gpt-3.5-turbo'
-        # The system message sets the behavior of the assistant
-        # The user message is the prompt we want the model to respond to
         response = openai.ChatCompletion.create(
             model='gpt-3.5-turbo',
             messages=[
@@ -33,7 +30,8 @@ def chat_complition(prompt: str) -> dict:
                     'role': 'user',
                     'content': prompt
                 },
-            ])
+            ]
+        )
 
         # Print a success message with the response from the OpenAI API call
         print(f"OpenAI API call successful. Response: {response}")  
@@ -43,9 +41,10 @@ def chat_complition(prompt: str) -> dict:
             'status': 1,
             'response': response['choices'][0]['message']['content']
         }
-except Exception as e:
-    # Print any error that occurs during the OpenAI API call
-    print(f"OpenAI API call failed. Error: {e}")  
 
-    # Return the error properly in the expected format
-    return {'status': 0, 'error': str(e)}
+    except Exception as e:
+        # Print any error that occurs during the OpenAI API call
+        print(f"OpenAI API call failed. Error: {e}")  
+
+        # Return the error properly in the expected format
+        return {'status': 0, 'error': str(e)}
