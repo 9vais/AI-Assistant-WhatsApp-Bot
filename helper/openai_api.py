@@ -1,72 +1,39 @@
-from flask import Flask, request, jsonify
-from helper.openai_api import chat_complition
-from helper.twilio_api import send_message
-from twilio.twiml.messaging_response import MessagingResponse
+import os
+import requests
 
-app = Flask(__name__)
+API_KEY = os.getenv("OPENAI_API_KEY")
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-@app.route('/')
-def home():
-    return jsonify(
-        {
-            'status': 'OK',
-            'wehook_url': 'BASEURL/twilio/receiveMessage',
-            'message': 'The webhook is ready.',
-            'video_url': 'https://youtu.be/y9NRLnPXsb0'
-        }
-    )
-
-@app.route('/twilio/receiveMessage', methods=['POST'])
-def receiveMessage():
+def chat_complition(prompt: str) -> dict:
     try:
-        message = request.form['Body']
-        sender_id = request.form['From']
+        headers = {
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://openrouter.ai",  # exigido por alguns modelos
+            "X-Title": "whatsapp-assistente"
+        }
 
-        print(f"Received message: {message} from {sender_id}")
+        data = {
+            "model": "openchat/openchat-3.5",
+            "messages": [
+                {"role": "system", "content": "Você é um assistente pessoal de tarefas. Responda com clareza."},
+                {"role": "user", "content": prompt}
+            ]
+        }
 
-        result = {}
-        try:
-            result = chat_complition(message)
-            print(f"[DEBUG] Resultado do chat_complition: {result}")
-        except Exception as e:
-            print(f"[ERRO] Falha ao chamar chat_complition: {e}")
+        response = requests.post(API_URL, headers=headers, json=data)
+        result = response.json()
 
-        resp = MessagingResponse()
+        # Depuração
+        print("[DEBUG] JSON bruto do OpenRouter:", result)
 
-        # Inicializa a variável de resposta
-        resposta = ""
+        resposta_texto = result['choices'][0]['message']['content']
 
-        if result.get("status") == 1:
-            raw = result.get("response")
-
-            # Se for uma string
-            if isinstance(raw, str):
-                resposta = raw
-
-            # Se for dicionário, tenta extrair texto com segurança
-            elif isinstance(raw, dict) and 'message' in raw:
-                resposta = raw['message'].get('content', '')
-
-            # Se for lista, tenta extrair o primeiro item
-            elif isinstance(raw, list) and len(raw) > 0:
-                first = raw[0]
-                if isinstance(first, dict) and 'message' in first:
-                    resposta = first['message'].get('content', '')
-
-        elif result.get("error"):
-            resposta = f"Erro da IA: {result['error']}"
-        else:
-            resposta = "Não entendi sua solicitação."
-
-        # Garante que sempre tenha algo para responder
-        if not resposta:
-            resposta = "A IA não conseguiu gerar uma resposta."
-
-        resp.message(resposta)
-        return str(resp)
+        return {
+            "status": 1,
+            "response": resposta_texto.strip()
+        }
 
     except Exception as e:
-        print(f"Error: {e}")
-        resp = MessagingResponse()
-        resp.message("Erro interno no servidor.")
-        return str(resp)
+        print(f"[ERRO OpenRouter]: {e}")
+        return {"status": 0, "error": str(e)}
