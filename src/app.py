@@ -20,46 +20,41 @@ def salvar_tarefas(tarefas):
 
 @app.route('/')
 def home():
-    return jsonify({
-        'status': 'OK',
-        'wehook_url': '/twilio/receiveMessage',
-        'message': 'Assistente de tarefas e lembretes ativo.'
-    })
+    return jsonify({"status": "OK", "message": "Assistente ativo com agendamento."})
 
 @app.route('/twilio/receiveMessage', methods=['POST'])
 def receiveMessage():
     try:
         mensagem = request.form['Body'].strip().lower()
         telefone = request.form['From']
-        print(f"[Usuário] {mensagem}")
         tarefas = carregar_tarefas()
         resp = MessagingResponse()
 
-        if mensagem.startswith("agendar:"):
-            conteudo = mensagem.replace("agendar:", "").strip()
-            if " às " in conteudo:
-                texto, hora = conteudo.split(" às ")
-                try:
-                    horario = datetime.strptime(hora.strip(), "%H:%M")
-                    horario_str = horario.strftime("%H:%M")
-                    tarefas.append({
-                        "descricao": texto.strip(),
-                        "concluida": False,
-                        "horario": horario_str,
-                        "telefone": telefone
-                    })
-                    salvar_tarefas(tarefas)
-                    resp.message(f"Lembrete agendado: '{texto.strip()}' às {horario_str}")
-                except:
-                    resp.message("Formato de hora inválido. Use: agendar: tarefa às 15:00")
-            else:
-                resp.message("Use o formato: agendar: tarefa às HH:MM")
-
-        elif mensagem.startswith("adicionar tarefa:"):
+        if mensagem.startswith("adicionar tarefa:"):
             descricao = mensagem.replace("adicionar tarefa:", "").strip()
             tarefas.append({"descricao": descricao, "concluida": False})
             salvar_tarefas(tarefas)
             resp.message(f"Tarefa adicionada: {descricao}")
+
+        elif mensagem.startswith("agendar:"):
+            try:
+                texto = mensagem.replace("agendar:", "").strip()
+                if " às " in texto:
+                    descricao, hora = texto.split(" às ")
+                    hora_agendada = datetime.strptime(hora.strip(), "%H:%M").strftime("%H:%M")
+                    tarefas.append({
+                        "descricao": descricao.strip(),
+                        "hora": hora_agendada,
+                        "concluida": False,
+                        "agendado": True,
+                        "telefone": telefone
+                    })
+                    salvar_tarefas(tarefas)
+                    resp.message(f"Tarefa agendada para {hora_agendada}: {descricao.strip()}")
+                else:
+                    resp.message("Use o formato: agendar: tarefa às HH:MM")
+            except:
+                resp.message("Formato inválido. Exemplo: agendar: beber água às 15:00")
 
         elif mensagem == "listar tarefas":
             if not tarefas:
@@ -68,10 +63,8 @@ def receiveMessage():
                 resposta = "📋 Suas tarefas:\n"
                 for i, t in enumerate(tarefas):
                     status = "✅" if t["concluida"] else "❌"
-                    texto = f"{i+1}. {t['descricao']} {status}"
-                    if "horario" in t:
-                        texto += f" ⏰ {t['horario']}"
-                    resposta += texto + "\n"
+                    hora = f" às {t['hora']}" if t.get("hora") else ""
+                    resposta += f"{i+1}. {t['descricao']}{hora} {status}\n"
                 resp.message(resposta)
 
         elif mensagem.startswith("concluir tarefa"):
@@ -89,10 +82,10 @@ def receiveMessage():
         else:
             comandos = (
                 "Comandos disponíveis:\n"
-                "➕ adicionar tarefa: estudar\n"
-                "⏰ agendar: tomar remédio às 14:00\n"
+                "➕ adicionar tarefa: comprar pão\n"
                 "📋 listar tarefas\n"
-                "✅ concluir tarefa 1"
+                "✅ concluir tarefa 1\n"
+                "⏰ agendar: beber água às 15:30"
             )
             resp.message(comandos)
 
@@ -101,5 +94,5 @@ def receiveMessage():
     except Exception as e:
         print(f"[ERRO]: {e}")
         resp = MessagingResponse()
-        resp.message("Erro ao processar sua mensagem.")
+        resp.message("Erro ao processar a mensagem.")
         return str(resp)
