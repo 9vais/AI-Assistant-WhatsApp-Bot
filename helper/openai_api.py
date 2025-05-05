@@ -9,14 +9,14 @@ def chat_complition(prompt: str) -> dict:
         headers = {
             "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://openrouter.ai",  # necessário para alguns modelos
+            "HTTP-Referer": "https://openrouter.ai",
             "X-Title": "whatsapp-assistente"
         }
 
         data = {
-            "model": "openchat/openchat-3.5",  # Gratuito
+            "model": "openchat/openchat-3.5",  # Gratuito e bom
             "messages": [
-                {"role": "system", "content": "Você é um assistente pessoal de tarefas. Seja direto, claro e útil."},
+                {"role": "system", "content": "Você é um assistente pessoal de tarefas. Responda de forma clara."},
                 {"role": "user", "content": prompt}
             ]
         }
@@ -24,11 +24,11 @@ def chat_complition(prompt: str) -> dict:
         response = requests.post(API_URL, headers=headers, json=data)
         result = response.json()
 
-        # Depuração no Render
-        print(f"[OpenRouter Response] {result}")
+        # NOVO: exibe o JSON retornado para debug
+        print("[DEBUG] JSON bruto do OpenRouter:", result)
 
-        # Acessa corretamente o texto da resposta
         resposta_texto = result['choices'][0]['message']['content']
+
         return {
             "status": 1,
             "response": resposta_texto.strip()
