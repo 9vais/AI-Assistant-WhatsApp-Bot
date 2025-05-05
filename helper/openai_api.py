@@ -43,9 +43,9 @@ def chat_complition(prompt: str) -> dict:
             'status': 1,
             'response': response['choices'][0]['message']['content']
         }
-    except Exception as e:
-        # Print any error that occurs during the OpenAI API call
-        print(f"OpenAI API call failed. Error: {e}")  
+except Exception as e:
+    # Print any error that occurs during the OpenAI API call
+    print(f"OpenAI API call failed. Error: {e}")  
 
-        # Return a dictionary with the status and an empty response
-        return {'status': 0, 'response': ''}  
+    # Return the error properly in the expected format
+    return {'status': 0, 'error': str(e)}
