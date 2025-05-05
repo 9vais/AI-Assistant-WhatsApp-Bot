@@ -1,50 +1,29 @@
-# Import the required modules
 import os
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 
-# Load the environment variables from the .env file
+# Carrega variáveis de ambiente
 load_dotenv()
 
-# Get the OpenAI API key from the environment variables
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Cria cliente com a chave da API
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def chat_complition(prompt: str) -> dict:
-    '''
-    Call Openai API for text completion
-    Parameters:
-        - prompt: user query (str)
-    Returns:
-        - dict
-    '''
     try:
-        # Create a chat completion with the OpenAI API
-        response = openai.ChatCompletion.create(
+        # Envia a pergunta para o ChatGPT
+        response = client.chat.completions.create(
             model='gpt-3.5-turbo',
             messages=[
-                {
-                    'role': 'system',
-                    'content': 'You are a helpful assistant.'
-                },
-                {
-                    'role': 'user',
-                    'content': prompt
-                },
+                {"role": "system", "content": "Você é um assistente pessoal de tarefas. Responda com clareza e objetividade."},
+                {"role": "user", "content": prompt}
             ]
         )
 
-        # Print a success message with the response from the OpenAI API call
-        print(f"OpenAI API call successful. Response: {response}")  
-
-        # Return a dictionary with the status and the content of the response
+        # Extrai o conteúdo da resposta
         return {
             'status': 1,
-            'response': response['choices'][0]['message']['content']
+            'response': response.choices[0].message.content
         }
-
     except Exception as e:
-        # Print any error that occurs during the OpenAI API call
-        print(f"OpenAI API call failed. Error: {e}")  
-
-        # Return the error properly in the expected format
+        print(f"[ERRO OpenAI]: {e}")
         return {'status': 0, 'error': str(e)}
