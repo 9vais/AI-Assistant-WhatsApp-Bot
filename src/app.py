@@ -40,7 +40,16 @@ def receiveMessage():
 
         # Build Twilio response
         resp = MessagingResponse()
-        resposta = result.get('response') or result.get('error') or "Erro: sem resposta da IA."
+
+        # Verifica e interpreta corretamente a resposta
+        resposta = ""
+        if result.get("status") == 1 and isinstance(result.get("response"), str):
+            resposta = result["response"]
+        elif result.get("error"):
+            resposta = f"Erro da IA: {result['error']}"
+        else:
+            resposta = "Não entendi sua solicitação."
+
         resp.message(resposta)
         return str(resp)
 
