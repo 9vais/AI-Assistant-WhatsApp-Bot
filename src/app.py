@@ -31,18 +31,18 @@ def receiveMessage():
         # Print the received message and sender id
         print(f"Received message: {message} from {sender_id}")  
 
-result = {}
-try:
-    result = chat_complition(message)
-    print(f"[DEBUG] Resultado do chat_complition: {result}")
-except Exception as e:
-    print(f"[ERRO] Falha ao chamar chat_complition: {e}")
+        result = {}
+        try:
+            result = chat_complition(message)
+            print(f"[DEBUG] Resultado do chat_complition: {result}")
+        except Exception as e:
+            print(f"[ERRO] Falha ao chamar chat_complition: {e}")
 
         # Build Twilio response
-  resp = MessagingResponse()
-resposta = result.get('response') or result.get('error') or "Erro: sem resposta da IA."
-resp.message(resposta)
-return str(resp)
+        resp = MessagingResponse()
+        resposta = result.get('response') or result.get('error') or "Erro: sem resposta da IA."
+        resp.message(resposta)
+        return str(resp)
 
     except Exception as e:
         print(f"Error: {e}")  
