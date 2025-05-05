@@ -33,26 +33,34 @@ def receiveMessage():
 
         resp = MessagingResponse()
 
-        # Trata a resposta corretamente
+        # Inicializa a variável de resposta
         resposta = ""
 
         if result.get("status") == 1:
             raw = result.get("response")
 
-            # Se a resposta já for texto
+            # Se for uma string
             if isinstance(raw, str):
                 resposta = raw
 
-            # Se for objeto ou lista, tenta extrair o texto
-            elif isinstance(raw, list) or isinstance(raw, dict):
-                try:
-                    resposta = raw[0]['message']['content']
-                except:
-                    resposta = "Erro ao interpretar a resposta da IA."
+            # Se for dicionário, tenta extrair texto com segurança
+            elif isinstance(raw, dict) and 'message' in raw:
+                resposta = raw['message'].get('content', '')
+
+            # Se for lista, tenta extrair o primeiro item
+            elif isinstance(raw, list) and len(raw) > 0:
+                first = raw[0]
+                if isinstance(first, dict) and 'message' in first:
+                    resposta = first['message'].get('content', '')
+
         elif result.get("error"):
             resposta = f"Erro da IA: {result['error']}"
         else:
             resposta = "Não entendi sua solicitação."
+
+        # Garante que sempre tenha algo para responder
+        if not resposta:
+            resposta = "A IA não conseguiu gerar uma resposta."
 
         resp.message(resposta)
         return str(resp)
@@ -60,5 +68,5 @@ def receiveMessage():
     except Exception as e:
         print(f"Error: {e}")
         resp = MessagingResponse()
-        resp.message("Ocorreu um erro no servidor ao tentar responder.")
+        resp.message("Erro interno no servidor.")
         return str(resp)
