@@ -2,6 +2,7 @@
 from flask import Flask, request, jsonify
 from helper.openai_api import chat_complition
 from helper.twilio_api import send_message
+from twilio.twiml.messaging_response import MessagingResponse  # <-- IMPORTANTE
 
 # Create a Flask application
 app = Flask(__name__)
@@ -36,11 +37,16 @@ def receiveMessage():
         # Print the response from OpenAI
         print(f"OpenAI response: {result}")  
 
-        # If the OpenAI response was successful, send the response as a message to the sender
+        # Build Twilio response
+        resp = MessagingResponse()
         if result['status'] == 1:
-            send_message(sender_id, result['response'])
+            resp.message(result['response'])
+        else:
+            resp.message("Houve um problema ao processar sua solicitação.")
+        return str(resp)
+
     except Exception as e:
-        # Print any error that occurs
         print(f"Error: {e}")  
-    # Return a 200 OK response
-    return 'OK', 200
+        resp = MessagingResponse()
+        resp.message("Ocorreu um erro no servidor ao tentar responder.")
+        return str(resp)
